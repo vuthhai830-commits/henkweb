@@ -1,35 +1,15 @@
-// 1. Load every component into its placeholder
 async function loadComponents() {
   const slots = document.querySelectorAll("[data-component]");
   await Promise.all(
     [...slots].map(async (slot) => {
-      const res = await fetch(slot.dataset.component);
-      slot.outerHTML = await res.text();
+      const res = await fetch(slot.dataset.component + '?v=' + Date.now());
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      doc.querySelectorAll('script').forEach(s => s.remove());
+      slot.outerHTML = doc.body.innerHTML;
     })
   );
 }
 
-// 2. Behavior that needs the components to exist first
-function initNavHighlight() {
-  const links = document.querySelectorAll(".navbar a");
-  const sections = [...links]
-    .map((l) => document.querySelector(l.getAttribute("href")))
-    .filter(Boolean);
-
-  window.addEventListener("scroll", () => {
-    let current = sections[0];
-    sections.forEach((sec) => {// Load every component into its placeholder
-async function loadComponents() {
-  const slots = document.querySelectorAll("[data-component]");
-  await Promise.all(
-    [...slots].map(async (slot) => {
-      const res = await fetch(slot.dataset.component);
-      slot.outerHTML = await res.text();
-    })
-  );
-}
-
-// Highlight the nav link of the section in view
 function initNavHighlight() {
   const links = document.querySelectorAll(".navbar a");
   const sections = [...links]
@@ -47,7 +27,35 @@ function initNavHighlight() {
   });
 }
 
-// Contact form (demo only, does not send anything yet)
+function initMobileNav() {
+  const toggle = document.getElementById("navToggle");
+  const links = document.getElementById("navLinks");
+  const close = document.getElementById("navClose");
+  if (!toggle || !links) return;
+
+  function openMenu() {
+    links.classList.add("open");
+    toggle.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  }
+  function closeMenu() {
+    links.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  }
+
+  toggle.addEventListener("click", openMenu);
+  if (close) close.addEventListener("click", closeMenu);
+
+  links.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", closeMenu);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && links.classList.contains("open")) closeMenu();
+  });
+}
+
 function initContactForm() {
   const form = document.getElementById("contactForm");
   if (!form) return;
@@ -57,33 +65,6 @@ function initContactForm() {
     form.reset();
   });
 }
-
-loadComponents().then(() => {
-  initNavHighlight();
-  initContactForm();
-});
-      if (window.scrollY >= sec.offsetTop - 200) current = sec;
-    });
-    links.forEach((l) =>
-      l.classList.toggle("active", l.getAttribute("href") === "#" + current.id)
-    );
-  });
-}
-
-function initContactForm() {
-  const form = document.getElementById("contactForm");
-  if (!form) return;
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    document.getElementById("formStatus").textContent = "Thanks! Your message was sent.";
-    form.reset();
-  });
-}
-
-loadComponents().then(() => {
-  initNavHighlight();
-  initContactForm();
-});
 
 function initTyping() {
   const el = document.getElementById("typing");
@@ -101,7 +82,6 @@ function initTyping() {
 
   function tick() {
     const word = words[wordIndex];
-
     if (deleting) {
       charIndex--;
       el.textContent = word.slice(0, charIndex);
@@ -112,7 +92,6 @@ function initTyping() {
       }
       return setTimeout(tick, deleteSpeed);
     }
-
     charIndex++;
     el.textContent = word.slice(0, charIndex);
     if (charIndex === word.length) {
@@ -129,5 +108,5 @@ loadComponents().then(() => {
   initNavHighlight();
   initContactForm();
   initTyping();
-  loadEffectRuntime();
+  initMobileNav();
 });
